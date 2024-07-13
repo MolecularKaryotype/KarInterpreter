@@ -1418,13 +1418,6 @@ def conglomerate_cn_genes(input_genes_reports):
     return new_cnv_genes, new_responsible_events, cnv_highlighted_genes
 
 
-def get_ucsc_url(chrom, start_pos, end_pos, db='hg38'):
-    prefix = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db={}' \
-             '&lastVirtModeType=default&lastVirtModeExtraState=&virtModeType=default&virtMode=0&nonVirtPosition=&position='.format(db)
-    suffix = '{}%3A{}%2D{}'.format(chrom.lower(), start_pos, end_pos)
-    return prefix + suffix
-
-
 def sort_events(input_events):
     def sort_key(event):
         event_type = event[1]
@@ -1527,10 +1520,6 @@ def test_reciprocal_trans():
     print(out)
 
 
-def test_ucsc_url():
-    x = get_ucsc_url('Chr2', 130271298, 131386307)
-    print(x)
-
 
 # def test_segs_union():
 #     l1 = ['7+', '8+']
@@ -1539,4 +1528,5 @@ def test_ucsc_url():
 #     print(l3)
 
 if __name__ == "__main__":
-    test_ucsc_url()
+    # test_ucsc_url()
+    pass
