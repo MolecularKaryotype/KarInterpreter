@@ -589,7 +589,7 @@ def lcs(list1, list2, size_dict):
     return final_score, alignment_1, alignment_2
 
 
-def interpret_haplotypes(mt_hap_list: [[str]], wt_hap_list: [[str]], chrom_identities: [str], segment_size_dict: {str: int}, d=500000, eps=500000):
+def interpret_haplotypes(mt_hap_list: [[str]], wt_hap_list: [[str]], chrom_identities: [str], segment_size_dict: {str: int}, d=20000, eps=300000):
     """
     Input a haplotype and a WT, report SVs; hap from mt list must correspond to hap from wt list
     :param segment_size_dict: {str: int} segment mapped to size of the segment (eg. 11: 12,345)
