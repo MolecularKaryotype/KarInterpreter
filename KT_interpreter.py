@@ -589,7 +589,7 @@ def lcs(list1, list2, size_dict):
     return final_score, alignment_1, alignment_2
 
 
-def interpret_haplotypes(mt_hap_list: [[str]], wt_hap_list: [[str]], chrom_identities: [str], segment_size_dict: {str: int}, d=500000, eps=500000):
+def interpret_haplotypes(mt_hap_list: [[str]], wt_hap_list: [[str]], chrom_identities: [str], segment_size_dict: {str: int}, d=20000, eps=300000):
     """
     Input a haplotype and a WT, report SVs; hap from mt list must correspond to hap from wt list
     :param segment_size_dict: {str: int} segment mapped to size of the segment (eg. 11: 12,345)
@@ -1410,11 +1410,10 @@ def conglomerate_cn_genes(input_genes_reports):
             else:
                 cnv_genes[gene] = gene_report['cnv']
                 responsible_events[gene] = [one_based_index]
-        for gene_info in gene_report['cnv_genes_highlight']:
-            gene_tuple = gene_info[0]
-            cnv_highlighted_genes[gene_tuple[0]] = gene_info
+        for gene_info_dict in gene_report['cnv_genes_highlight']:
+            cnv_highlighted_genes[gene_info_dict['gene symbol']] = gene_info_dict
     new_cnv_genes = {gene: cnv for gene, cnv in cnv_genes.items() if cnv != 0}
-    new_responsible_events = {gene: events for gene, events in responsible_events.items() if cnv_genes[gene] != 0}
+    new_responsible_events = {gene: events for gene, events in responsible_events.items() if gene in new_cnv_genes}
     return new_cnv_genes, new_responsible_events, cnv_highlighted_genes
 
 
@@ -1431,45 +1430,41 @@ def sort_events(input_events):
 
 
 def format_genes_report(genes_report):
-    conglomerated_cnv_genes, cnv_genes_events, cnv_highlighted_genes = conglomerate_cn_genes(genes_report)
+    ## breakpoint interrupted genes
     formatted_genes_report = []
     for event_idx, report_dict in enumerate(genes_report):
         one_based_idx = event_idx + 1
         for entry in report_dict['bp_genes_highlight']:
-            gene_entry = entry[0]
-            disease_entry = entry[1]
-            gene_name = gene_entry[0]
-            gene_omim = gene_entry[1]
-            disease_names = []
-            disease_omim = []
-            for disease in disease_entry:
-                disease_names.append(disease[0])
-                disease_omim.append(disease[1])
             formatted_genes_report.append({'SV': one_based_idx,
                                            'rationale': 'breakpoint proximal',
-                                           'gene name': gene_name,
-                                           'gene omim': gene_omim,
-                                           'diseases': disease_names,
-                                           'disease omims': disease_omim})
+                                           'gene': entry['gene symbol'],
+                                           'gene omim': entry['gene mim'],
+                                           'disease': entry['disease name'],
+                                           'allelic req.': entry['allelic requirement'],
+                                           'mutatation req.': entry['mutation consequence'],
+                                           'confidence': entry['confidence category'],
+                                           'organ': entry['organ specificity list']})
+    # genes with CNV: e.g. if +1 and -1, then, will not be reported
+    # conglomerated_cnv_genes: all genes with CNV != 0
+    # cnv_genes_events: list of event idxs associated with each conglomerated cnv_gene
+    # cnv_highlighted_genes: all CNV genes overlapping the DDG2P, regardless of whether CNV = 0
+    conglomerated_cnv_genes, cnv_genes_events, cnv_highlighted_genes = conglomerate_cn_genes(genes_report)
     for gene_name, cnv in conglomerated_cnv_genes.items():
         if gene_name in cnv_highlighted_genes:
+            entry = cnv_highlighted_genes[gene_name]
             related_events = cnv_genes_events[gene_name]
-            gene_omim = cnv_highlighted_genes[gene_name][0][1]
-            disease_names = []
-            disease_omim = []
-            for disease in cnv_highlighted_genes[gene_name][1]:
-                disease_names.append(disease[0])
-                disease_omim.append(disease[1])
             if cnv > 0:
                 cnv_str = "+" + str(cnv)
             else:
                 cnv_str = str(cnv)
             formatted_genes_report.append({'SV': ','.join([str(i) for i in sorted(related_events)]),
                                            'rationale': 'CN' + cnv_str,
-                                           'gene name': gene_name,
-                                           'gene omim': gene_omim,
-                                           'diseases': disease_names,
-                                           'disease omims': disease_omim})
+                                           'gene': entry['gene symbol'],
+                                           'gene omim': entry['gene mim'],
+                                           'allelic req.': entry['allelic requirement'],
+                                           'mutatation req.': entry['mutation consequence'],
+                                           'confidence': entry['confidence category'],
+                                           'organ': entry['organ specificity list']})
     return formatted_genes_report
 
 
